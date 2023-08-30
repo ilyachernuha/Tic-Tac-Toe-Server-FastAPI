@@ -206,7 +206,6 @@ async def invite_user(invitation: Invitation, inviter: str = Depends(verify_toke
     if invitation.invited not in waiting_users:
         raise HTTPException(
             status_code=400, detail="Invited user is not waiting for a game")
-<<<<<<< HEAD
 
     if invitation.invited == inviter:
         raise HTTPException(status_code=400, detail="You cannot invite yourself")
@@ -214,8 +213,6 @@ async def invite_user(invitation: Invitation, inviter: str = Depends(verify_toke
     if invitation.grid_properties.size < 3 or invitation.grid_properties.size > 26 or \
             invitation.grid_properties.winning_line > invitation.grid_properties.size:
         raise HTTPException(status_code=400, detail="Grid properties not allowed")
-=======
->>>>>>> 9d25b09 (fix: cors policy)
 
     invitation_id = invitation_manager.create_invitation(inviter=inviter,
                                                          invited=invitation.invited,
