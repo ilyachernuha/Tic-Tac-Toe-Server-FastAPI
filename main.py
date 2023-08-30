@@ -10,7 +10,22 @@ from invitations import InvitationManager
 from game import Game, GameManager
 from schemas import NewMove, Invitation, InvitationResponse
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+origins = [
+    "https://ilyachernuha.github.io/tic-tac-toe-web-client/"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 security = HTTPBasic()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 ph = PasswordHasher()
@@ -79,7 +94,8 @@ async def create_user(credentials: HTTPBasicCredentials = Depends(security)):
         cursor.execute(select_query, (username,))
 
         if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="This username is taken")
+            raise HTTPException(
+                status_code=400, detail="This username is taken")
 
         insert_query = "INSERT INTO users (username, hashed_password) VALUES (?, ?)"
         cursor.execute(insert_query, (username, hashed_password))
@@ -111,16 +127,19 @@ async def login(credentials: HTTPBasicCredentials = Depends(security)):
         result = cursor.fetchone()
 
         if result is None:
-            raise HTTPException(status_code=400, detail="Username does not exist")
+            raise HTTPException(
+                status_code=400, detail="Username does not exist")
 
         try:
             if ph.verify(result[0], password):
                 token = generate_token(username)
                 return {"status": "Logged in", "token": token}
             else:
-                raise HTTPException(status_code=400, detail="Incorrect username or password")
+                raise HTTPException(
+                    status_code=400, detail="Incorrect username or password")
         except Argon2Error:
-            raise HTTPException(status_code=400, detail="Incorrect username or password")
+            raise HTTPException(
+                status_code=400, detail="Incorrect username or password")
 
 
 @app.delete("/delete_account")
@@ -181,7 +200,8 @@ async def get_waiting_users(username: str = Depends(verify_token)):
 @app.post("/invite")
 async def invite_user(invitation: Invitation, inviter: str = Depends(verify_token)):
     if invitation.invited not in waiting_users:
-        raise HTTPException(status_code=400, detail="Invited user is not waiting for a game")
+        raise HTTPException(
+            status_code=400, detail="Invited user is not waiting for a game")
 
     if invitation.invited == inviter:
         raise HTTPException(status_code=400, detail="You cannot invite yourself")
@@ -225,9 +245,11 @@ async def respond_invitation(invitation_response: InvitationResponse, username: 
             winning_line = invitation["grid_properties"].winning_line
 
             if invitation["inviter_playing_x"]:
-                game_id = game_manager.create_game(invitation["inviter"], invitation["invited"], size, winning_line)
+                game_id = game_manager.create_game(
+                    invitation["inviter"], invitation["invited"], size, winning_line)
             else:
-                game_id = game_manager.create_game(invitation["invited"], invitation["inviter"], size, winning_line)
+                game_id = game_manager.create_game(
+                    invitation["invited"], invitation["inviter"], size, winning_line)
 
             waiting_users.discard(invitation["inviter"])
             waiting_users.discard(invitation["invited"])
@@ -236,14 +258,9 @@ async def respond_invitation(invitation_response: InvitationResponse, username: 
 
             return {"game_id": game_id}
 
-        elif invitation is None:
-            raise HTTPException(status_code=404, detail="Invitation not found")
-        elif invitation["invited"] != username:
-            raise HTTPException(status_code=403, detail="This invitation is not for you")
-        elif invitation["status"] == "cancelled":
-            raise HTTPException(status_code=410, detail="Invitation cancelled by inviter")
-        elif invitation["status"] != "pending":
-            raise HTTPException(status_code=409, detail="Invitation already responded to")
+        else:
+            raise HTTPException(
+                status_code=400, detail="Invalid invitation or already responded")
 
     elif response.lower() == "decline":
         invitation_manager.decline_invitation(invitation_id, username)
@@ -274,7 +291,8 @@ async def make_move(new_move: NewMove, username: str = Depends(verify_token)):
         raise HTTPException(status_code=404, detail="Game not found")
 
     if username != game.x_player_name and username != game.o_player_name:
-        raise HTTPException(status_code=403, detail="You are not a player in this game")
+        raise HTTPException(
+            status_code=403, detail="You are not a player in this game")
 
     try:
         game.make_move(username, cell)
