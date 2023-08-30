@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 origins = [
+    "77.47.199.71:0",
     "https://ilyachernuha.github.io/tic-tac-toe-web-client/"
 ]
 
