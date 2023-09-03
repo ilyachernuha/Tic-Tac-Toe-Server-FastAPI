@@ -173,7 +173,8 @@ async def delete_account(credentials: HTTPBasicCredentials = Depends(security)):
             if not ph.verify(result[0], password):
                 raise HTTPException(status_code=400, detail="Incorrect username or password")
         except Argon2Error:
-            raise HTTPException(status_code=400, detail="Incorrect username or password")
+            raise HTTPException(
+                status_code=400, detail="Incorrect username or password")
 
         try:
             delete_query = "DELETE FROM users WHERE username = ?"
